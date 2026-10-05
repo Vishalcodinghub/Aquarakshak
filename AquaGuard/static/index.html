@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaGuard — Smart Water Quality &amp; Purification System</title>
+<meta name="description" content="AquaGuard software prototype: simulated water-quality monitoring, purification pipeline visualization, alerts and analytics for rural and mining-affected areas.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3C16 3 7 13.5 7 20a9 9 0 0 0 18 0C25 13.5 16 3 16 3z' fill='%230284c7'/%3E%3Cpath d='M12 20a4 4 0 0 0 4 4' stroke='white' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ==================== APP LAYOUT ==================== -->
+<div class="app">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="brand-drop" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="34" height="34"><path d="M16 3C16 3 7 13.5 7 20a9 9 0 0 0 18 0C25 13.5 16 3 16 3z" fill="currentColor"/><path d="M12 20a4 4 0 0 0 4 4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </span>
+      <span class="brand-text">
+        <strong>AquaGuard</strong>
+        <small>Smart Water Purification &amp; Quality Monitoring</small>
+      </span>
+    </div>
+
+    <nav class="nav" id="mainNav" aria-label="Main navigation">
+      <button class="nav-item active" data-page="dashboard"><span class="nav-ico">📊</span>Dashboard</button>
+      <button class="nav-item" data-page="monitoring"><span class="nav-ico">📡</span>Live Monitoring</button>
+      <button class="nav-item" data-page="purification"><span class="nav-ico">💧</span>Purification</button>
+      <button class="nav-item" data-page="analytics"><span class="nav-ico">📈</span>Analytics</button>
+      <button class="nav-item" data-page="alerts"><span class="nav-ico">🔔</span>Alerts<span class="nav-badge" id="navAlertCount" hidden>0</span></button>
+      <button class="nav-item" data-page="sources"><span class="nav-ico">📍</span>Water Sources</button>
+      <button class="nav-item" data-page="health"><span class="nav-ico">🩺</span>System Health</button>
+      <button class="nav-item" data-page="settings"><span class="nav-ico">⚙️</span>Settings</button>
+      <div class="nav-sep"></div>
+      <button class="nav-item nav-item--alt" data-page="community"><span class="nav-ico">🏡</span>Community Mode</button>
+      <button class="nav-item nav-item--alt" data-page="learn"><span class="nav-ico">📚</span>About Water Quality</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="dot dot-green"></span> Simulated sensors · Python backend
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- ===== Main ===== -->
+  <main class="main">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">☰</button>
+      <div class="topbar-title">
+        <h1 id="pageTitle">Dashboard</h1>
+        <span class="tag tag-outline" title="All readings shown are software-simulated">SIMULATED DATA</span>
+      </div>
+      <div class="topbar-right">
+        <div class="live-pill" id="livePill">
+          <span class="dot dot-red" id="liveDot"></span><span id="livePillText">Live Monitoring: OFF</span>
+        </div>
+        <div class="status-chip status-safe" id="statusChip">SAFE</div>
+        <div class="score-mini" id="scoreMini" title="Prototype Water Quality Score">
+          <svg viewBox="0 0 40 40" width="40" height="40">
+            <circle cx="20" cy="20" r="16" class="ring-bg"/>
+            <circle cx="20" cy="20" r="16" class="ring-fg" id="scoreMiniRing"/>
+          </svg>
+          <span id="scoreMiniVal">--</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         PAGE: DASHBOARD
+    ============================================================ -->
+    <section class="page active" id="page-dashboard">
+
+      <div class="hero card">
+        <div class="hero-main">
+          <div class="hero-status">
+            <span class="hero-label">Current Water Status</span>
+            <span class="status-badge status-safe" id="heroStatus">SAFE</span>
+          </div>
+          <p class="hero-sub" id="heroReason">All monitored parameters are within configured thresholds.</p>
+          <div class="hero-meta">
+            <span class="chip"><b>Scenario:</b> <span id="heroScenario">Default</span></span>
+            <span class="chip"><b>Updated:</b> <span id="heroUpdated">—</span></span>
+            <span class="chip chip-outline" title="Simulated readings, not laboratory results">Indicative Water Quality Assessment</span>
+          </div>
+        </div>
+        <div class="hero-score">
+          <div class="score-ring" id="scoreRing">
+            <svg viewBox="0 0 120 120" width="150" height="150">
+              <circle cx="60" cy="60" r="50" class="ring-bg"/>
+              <circle cx="60" cy="60" r="50" class="ring-fg" id="scoreRingFg"/>
+            </svg>
+            <div class="score-center">
+              <b id="scoreValue">--</b>
+              <small id="scoreCategory">/100</small>
+            </div>
+          </div>
+          <p class="score-label">Water Quality Score<br><small class="muted">Prototype Water Quality Score — not a certified drinking-water standard</small></p>
+        </div>
+      </div>
+
+      <!-- Parameter cards -->
+      <div class="grid grid-4" id="paramCards">
+        <article class="card param-card" id="card-ph">
+          <header><span class="param-ico ico-ph">⚗️</span><h3>pH</h3><span class="status-badge" id="phBadge">—</span></header>
+          <p class="param-value"><span id="phValue">—</span><small> pH units</small></p>
+          <p class="param-range muted" id="phRange">Acceptable: 6.5 – 8.5</p>
+          <div class="spark"><canvas id="spark-ph"></canvas></div>
+        </article>
+        <article class="card param-card" id="card-turbidity">
+          <header><span class="param-ico ico-turb">🌫️</span><h3>Turbidity</h3><span class="status-badge" id="turbidityBadge">—</span></header>
+          <p class="param-value"><span id="turbidityValue">—</span><small> NTU</small></p>
+          <p class="param-range muted" id="turbidityRange">Warning &gt; 4 · Unsafe &gt; 10</p>
+          <div class="spark"><canvas id="spark-turbidity"></canvas></div>
+        </article>
+        <article class="card param-card" id="card-tds">
+          <header><span class="param-ico ico-tds">🧂</span><h3>TDS</h3><span class="status-badge" id="tdsBadge">—</span></header>
+          <p class="param-value"><span id="tdsValue">—</span><small> ppm</small></p>
+          <p class="param-range muted" id="tdsRange">Warning &gt; 500 · Unsafe &gt; 1200</p>
+          <div class="spark"><canvas id="spark-tds"></canvas></div>
+        </article>
+        <article class="card param-card" id="card-temp">
+          <header><span class="param-ico ico-temp">🌡️</span><h3>Temperature</h3><span class="status-badge" id="tempBadge">—</span></header>
+          <p class="param-value"><span id="tempValue">—</span><small> °C</small></p>
+          <p class="param-range muted" id="tempRange">Normal: 10 – 35 °C</p>
+          <div class="spark"><canvas id="spark-temp"></canvas></div>
+        </article>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3 class="card-title">Reading Overview <small class="muted">(last 20 simulated samples)</small></h3>
+          <div class="chart-wrap"><canvas id="overviewChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Active Alerts <a class="link" data-page="alerts">View all →</a></h3>
+          <div id="dashAlertList" class="alert-list-compact"></div>
+        </div>
+      </div>
+
+      <div class="notice notice-info">
+        <b>ℹ️ Indicative Water Quality Assessment.</b> This dashboard evaluates four simulated sensor parameters only.
+        These readings <b>cannot prove microbiological safety</b> — laboratory and microbial testing may still be required
+        for complete drinking-water safety verification.
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: LIVE MONITORING
+    ============================================================ -->
+    <section class="page" id="page-monitoring">
+      <div class="card">
+        <h3 class="card-title">Simulation &amp; Monitoring Controls</h3>
+        <div class="btn-rows">
+          <div class="btn-row">
+            <span class="btn-row-label">Monitoring</span>
+            <button class="btn btn-primary" id="btnStartMon">▶ Start Monitoring</button>
+            <button class="btn btn-ghost" id="btnStopMon">⏸ Stop Monitoring</button>
+            <button class="btn btn-ghost" id="btnReset">↺ Reset Session</button>
+          </div>
+          <div class="btn-row">
+            <span class="btn-row-label">Scenarios</span>
+            <button class="btn btn-safe" id="btnSafe">✅ Simulate Safe Water</button>
+            <button class="btn btn-warn" id="btnPolluted">⚠ Simulate Polluted Water</button>
+            <button class="btn btn-danger" id="btnMining">⛏ Simulate Mining-Affected Water</button>
+          </div>
+        </div>
+        <p class="muted small">Scenarios transition readings gradually over several ticks to mimic real environmental change — values do not jump randomly.</p>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3 class="card-title">Live Sensor Trends</h3>
+          <div class="chart-wrap"><canvas id="liveChart"></canvas></div>
+          <p class="muted small">Live Monitoring Mode refreshes every <span id="intervalEcho">3</span>s (configurable in Settings).</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Latest Reading</h3>
+          <table class="kv-table" id="latestTable">
+            <tr><th>pH</th><td id="lt-ph">—</td><td><span class="status-badge" id="lt-ph-b">—</span></td></tr>
+            <tr><th>Turbidity</th><td id="lt-turb">—</td><td><span class="status-badge" id="lt-turb-b">—</span></td></tr>
+            <tr><th>TDS</th><td id="lt-tds">—</td><td><span class="status-badge" id="lt-tds-b">—</span></td></tr>
+            <tr><th>Temperature</th><td id="lt-temp">—</td><td><span class="status-badge" id="lt-temp-b">—</span></td></tr>
+            <tr><th>Overall</th><td colspan="2"><span class="status-badge" id="lt-overall">—</span></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mining-affected monitoring banner -->
+      <div class="notice notice-mining" id="miningBanner" hidden>
+        <b>⛏ Mining-Affected Water Monitoring.</b>
+        Sensor readings indicate unusual water characteristics. Specialized laboratory testing is recommended
+        to identify specific mining-related contaminants. This prototype does <b>not</b> measure heavy metals or
+        chemicals — any such presence requires laboratory verification.
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: PURIFICATION
+    ============================================================ -->
+    <section class="page" id="page-purification">
+      <div class="card">
+        <div class="pur-head">
+          <div>
+            <h3 class="card-title">Multi-Stage Purification</h3>
+            <p class="muted small">Simulated treatment pipeline. Actual treatment technology must be selected according to
+            site-specific contaminants — mining-affected water may require specialized treatment depending on laboratory analysis.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btnStartPur">▶ Start Purification</button>
+            <button class="btn btn-ghost" id="btnStopPur">⏸ Stop</button>
+            <button class="btn btn-ghost" id="btnResetPur">↺ Reset Stages</button>
+          </div>
+        </div>
+        <div class="pipeline" id="pipeline"><!-- stages injected by app.js --></div>
+        <div class="pur-progress">
+          <div class="progress"><div class="progress-bar progress-blue" id="purProgressBar" style="width:0%"></div></div>
+          <span class="muted small" id="purProgressLabel">Pipeline idle</span>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3 class="card-title">Before vs After Purification</h3>
+          <p class="muted small">Simulated improvement only — does not represent guaranteed real-world removal efficiency.</p>
+          <div class="ba-grid" id="baGrid">
+            <div class="ba-col">
+              <h4>Before Purification <span class="status-badge" id="baBeforeStatus">—</span></h4>
+              <div class="ba-row"><span>pH</span><b id="baBeforePh">—</b></div>
+              <div class="ba-row"><span>Turbidity</span><b id="baBeforeTurb">— NTU</b></div>
+              <div class="ba-row"><span>TDS</span><b id="baBeforeTds">— ppm</b></div>
+              <div class="ba-row"><span>Temperature</span><b id="baBeforeTemp">— °C</b></div>
+            </div>
+            <div class="ba-col ba-col-after">
+              <h4>After Purification <span class="status-badge" id="baAfterStatus">—</span></h4>
+              <div class="ba-row"><span>pH</span><b id="baAfterPh">—</b></div>
+              <div class="ba-row"><span>Turbidity</span><b id="baAfterTurb">— NTU</b></div>
+              <div class="ba-row"><span>TDS</span><b id="baAfterTds">— ppm</b></div>
+              <div class="ba-row"><span>Temperature</span><b id="baAfterTemp">— °C</b></div>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="beforeAfterChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Improvement Progress</h3>
+          <div id="improveBars" class="improve-bars"></div>
+          <p class="muted small" id="improveNote">Start purification to simulate parameter improvement across the pipeline.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3 class="card-title">Purification Control Panel</h3>
+          <div class="btn-rows">
+            <div class="btn-row">
+              <span class="btn-row-label">Control</span>
+              <button class="btn btn-primary" id="btnCtlStart">▶ Start Purification</button>
+              <button class="btn btn-ghost" id="btnCtlStop">⏸ Stop Purification</button>
+              <button class="btn btn-danger-outline" id="btnEmergency">🛑 Emergency Shutdown</button>
+            </div>
+            <div class="btn-row">
+              <span class="btn-row-label">Mode</span>
+              <label class="radio"><input type="radio" name="purMode" value="auto" id="modeAuto" checked> Auto Mode — starts purification automatically when water is WARNING/UNSAFE</label>
+              <label class="radio"><input type="radio" name="purMode" value="manual" id="modeManual"> Manual Mode — operator controls each action</label>
+            </div>
+          </div>
+          <div class="grid grid-2 grid-tight">
+            <div class="sys-tile"><span>Pump Status</span><b id="pumpStatus">Idle</b></div>
+            <div class="sys-tile"><span>Filter Status</span><b id="filterStatus">Standby</b></div>
+            <div class="sys-tile"><span>Disinfection</span><b id="disinfectionStatus">Standby</b></div>
+            <div class="sys-tile"><span>System Health</span><b id="purSysHealth">—</b></div>
+            <div class="sys-tile"><span>Raw-Water Tank</span>
+              <div class="progress"><div class="progress-bar progress-blue" id="rawTankBar" style="width:80%"></div></div>
+              <b id="rawTankVal">80%</b>
+            </div>
+            <div class="sys-tile"><span>Clean-Water Tank</span>
+              <div class="progress"><div class="progress-bar progress-green" id="cleanTankBar" style="width:10%"></div></div>
+              <b id="cleanTankVal">10%</b>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Treated-Water Trend</h3>
+          <p class="muted small">The “After” line shows the simulated output of the purification pipeline.</p>
+          <div class="chart-wrap"><canvas id="treatedChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: ANALYTICS
+    ============================================================ -->
+    <section class="page" id="page-analytics">
+      <div class="card">
+        <div class="range-row">
+          <h3 class="card-title">Analytics &amp; History</h3>
+          <div class="seg" id="rangeSeg">
+            <button data-range="1">Last 1 hour</button>
+            <button data-range="24" class="active">Last 24 hours</button>
+            <button data-range="168">Last 7 days</button>
+            <button data-range="720">Last 30 days</button>
+          </div>
+        </div>
+        <div class="stat-row" id="statRow"><!-- min/max/avg/current chips injected --></div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card"><h3 class="card-title">pH History</h3><div class="chart-wrap"><canvas id="hist-ph"></canvas></div></div>
+        <div class="card"><h3 class="card-title">Turbidity History (NTU)</h3><div class="chart-wrap"><canvas id="hist-turb"></canvas></div></div>
+        <div class="card"><h3 class="card-title">TDS History (ppm)</h3><div class="chart-wrap"><canvas id="hist-tds"></canvas></div></div>
+        <div class="card"><h3 class="card-title">Temperature History (°C)</h3><div class="chart-wrap"><canvas id="hist-temp"></canvas></div></div>
+      </div>
+      <div class="card">
+        <h3 class="card-title">Water Quality Score History</h3>
+        <p class="muted small">Prototype Water Quality Score — demonstration metric, not a certified drinking-water standard.</p>
+        <div class="chart-wrap"><canvas id="hist-score"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Sensor Data Log</h3>
+        <div class="table-toolbar">
+          <input id="logSearch" type="search" placeholder="Search date, value, status…">
+          <select id="logFilter">
+            <option value="all">All statuses</option>
+            <option value="SAFE">SAFE only</option>
+            <option value="WARNING">WARNING only</option>
+            <option value="UNSAFE">UNSAFE only</option>
+            <option value="pur-running">Purification was running</option>
+          </select>
+          <select id="perPage">
+            <option value="10">10 rows</option>
+            <option value="25">25 rows</option>
+            <option value="50">50 rows</option>
+          </select>
+          <span class="spacer"></span>
+          <span class="muted small" id="logCount">0 entries</span>
+          <button class="btn btn-primary btn-sm" id="btnExportCsv">⬇ Export CSV</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="logTable">
+            <thead><tr>
+              <th data-sort="ts">Date ▼</th>
+              <th data-sort="ts">Time</th>
+              <th data-sort="ph">pH</th>
+              <th data-sort="turb">Turbidity</th>
+              <th data-sort="tds">TDS</th>
+              <th data-sort="temp">Temp</th>
+              <th data-sort="status">Quality Status</th>
+              <th data-sort="pur">Purification</th>
+            </tr></thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <button class="btn btn-ghost btn-sm" id="prevPage">← Prev</button>
+          <span id="pageInfo">Page 1 / 1</span>
+          <button class="btn btn-ghost btn-sm" id="nextPage">Next →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: ALERTS
+    ============================================================ -->
+    <section class="page" id="page-alerts">
+      <div class="card">
+        <div class="range-row">
+          <div class="seg" id="alertSeg">
+            <button data-tab="active" class="active">Active Alerts</button>
+            <button data-tab="resolved">Resolved Alerts</button>
+            <button data-tab="history">Alert History</button>
+          </div>
+          <button class="btn btn-ghost" id="btnResolveAll">✔ Resolve All</button>
+        </div>
+        <div id="alertList" class="alert-list"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: WATER SOURCES
+    ============================================================ -->
+    <section class="page" id="page-sources">
+      <div class="card">
+        <h3 class="card-title">Location Monitoring — Demo Sources</h3>
+        <p class="muted small">All locations are <b>simulated demo locations</b> (illustrative coordinates only — they do not represent real communities).</p>
+        <div class="map-sim" id="mapSim">
+          <div class="map-grid" aria-hidden="true"></div>
+          <!-- pins injected -->
+        </div>
+      </div>
+      <div class="grid grid-2" id="sourceCards"><!-- cards injected --></div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: SYSTEM HEALTH
+    ============================================================ -->
+    <section class="page" id="page-health">
+      <div class="grid grid-2">
+        <div class="card">
+          <h3 class="card-title">System Health</h3>
+          <div class="health-hero">
+            <div class="score-ring">
+              <svg viewBox="0 0 120 120" width="130" height="130">
+                <circle cx="60" cy="60" r="50" class="ring-bg"/>
+                <circle cx="60" cy="60" r="50" class="ring-fg" id="healthRing"/>
+              </svg>
+              <div class="score-center"><b id="healthValue">--</b><small>System</small></div>
+            </div>
+            <div id="healthLegend" class="health-legend"></div>
+          </div>
+          <div class="grid grid-2 grid-tight" id="healthTiles"><!-- tiles injected --></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Simulated IoT Architecture</h3>
+          <p class="muted small">The prototype mimics this data flow — no real hardware or cloud account is required.</p>
+          <div class="iot-flow" id="iotFlow">
+            <div class="iot-node">🛰️<span>Sensors</span><small>4 simulated probes</small></div>
+            <div class="iot-arrow">→</div>
+            <div class="iot-node">📶<span>IoT Gateway</span><small>local mock API</small></div>
+            <div class="iot-arrow">→</div>
+            <div class="iot-node">⚙️<span>Data Processing</span><small>smoothing &amp; validation</small></div>
+            <div class="iot-arrow">→</div>
+            <div class="iot-node">🧪<span>Water Quality Analysis</span><small>rule engine</small></div>
+            <div class="iot-arrow">→</div>
+            <div class="iot-node">🔔<span>Alerts</span><small>threshold engine</small></div>
+            <div class="iot-arrow">→</div>
+            <div class="iot-node">📊<span>Dashboard</span><small>this UI</small></div>
+          </div>
+          <h4 class="mt">Mock API Gateway</h4>
+          <div class="code-box">GET  /api/health        → gateway status
+GET  /api/snapshot      → latest simulated reading
+POST /api/simulate      → switch scenario
+POST /api/purification  → pipeline commands
+GET  /api/history       → simulated history
+GET  /api/export.csv    → sensor log (CSV)</div>
+          <button class="btn btn-ghost mt" id="btnPingGateway">Ping Gateway (/api/health)</button>
+          <pre class="code-box mt" id="pingResult" hidden></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: SETTINGS
+    ============================================================ -->
+    <section class="page" id="page-settings">
+      <div class="grid grid-2">
+        <div class="card">
+          <h3 class="card-title">Thresholds</h3>
+          <p class="muted small">Changes apply immediately across status calculation, alerts, dashboard and community mode.</p>
+          <form id="settingsForm" class="form-grid">
+            <label>pH minimum <input type="number" step="0.1" id="set-phMin"></label>
+            <label>pH maximum <input type="number" step="0.1" id="set-phMax"></label>
+            <label>Turbidity warning (NTU) <input type="number" step="0.5" id="set-turbidityWarn"></label>
+            <label>Turbidity unsafe (NTU) <input type="number" step="0.5" id="set-turbidityUnsafe"></label>
+            <label>TDS warning (ppm) <input type="number" step="10" id="set-tdsWarn"></label>
+            <label>TDS unsafe (ppm) <input type="number" step="10" id="set-tdsUnsafe"></label>
+            <label>Temperature min (°C) <input type="number" step="0.5" id="set-tempMin"></label>
+            <label>Temperature max (°C) <input type="number" step="0.5" id="set-tempMax"></label>
+          </form>
+        </div>
+        <div class="card">
+          <h3 class="card-title">System</h3>
+          <form class="form-grid">
+            <label>Alert sensitivity
+              <select id="set-alertSensitivity">
+                <option value="low">Low — fewer alerts</option>
+                <option value="normal">Normal</option>
+                <option value="high">High — alert early</option>
+              </select>
+            </label>
+            <label>Monitoring interval (seconds)
+              <select id="set-monitoringInterval">
+                <option value="2">2 s</option>
+                <option value="3">3 s</option>
+                <option value="5">5 s</option>
+                <option value="10">10 s</option>
+              </select>
+            </label>
+            <label>Simulation mode
+              <select id="set-simulationMode">
+                <option value="standard">Standard drift</option>
+                <option value="stable">Stable (calm water)</option>
+                <option value="volatile">Volatile (storm/runoff)</option>
+              </select>
+            </label>
+          </form>
+          <div class="btn-row mt">
+            <button class="btn btn-primary" id="btnSaveSettings">Save Settings</button>
+            <button class="btn btn-ghost" id="btnResetSettings">Restore Defaults</button>
+          </div>
+          <div class="btn-row mt">
+            <button class="btn btn-ghost" id="btnSeedHistory">Generate 7-day demo history</button>
+            <button class="btn btn-danger-outline" id="btnWipeData">Clear All Local Data</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: COMMUNITY MODE
+    ============================================================ -->
+    <section class="page" id="page-community">
+      <div class="card community-hero">
+        <div>
+          <h2 id="cStatusBig" class="status-badge status-safe c-big">✅ Water Condition: SAFE</h2>
+          <p class="c-reason" id="cReason">All readings look normal.</p>
+          <div class="c-actions">
+            <b>Recommended Action:</b>
+            <p id="cAction">Water can be used after normal household handling. Keep checking this screen.</p>
+          </div>
+        </div>
+        <div class="community-lang">
+          <span class="muted small">Simple view for rural communities</span>
+          <span class="tag tag-outline">Easy language · Big indicators</span>
+        </div>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="card c-param" id="c-ph"><h3>Acidity (pH)</h3><p class="c-val" id="cPh">—</p><p class="c-status" id="cPhS">—</p><p class="muted small">Water should not be too sour (low) or too bitter/alkaline (high).</p></div>
+        <div class="card c-param" id="c-turb"><h3>Cloudiness</h3><p class="c-val" id="cTurb">—</p><p class="c-status" id="cTurbS">—</p><p class="muted small">Clear water is good. Muddy water needs filtering first.</p></div>
+        <div class="card c-param" id="c-tds"><h3>Dissolved Salts</h3><p class="c-val" id="cTds">—</p><p class="c-status" id="cTdsS">—</p><p class="muted small">Too many dissolved salts can taste bad and may be harmful.</p></div>
+        <div class="card c-param" id="c-temp"><h3>Warmth</h3><p class="c-val" id="cTemp">—</p><p class="c-status" id="cTempS">—</p><p class="muted small">A sudden change can mean something entered the water.</p></div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card c-param" id="c-pur">
+          <h3>Purification Machine</h3>
+          <p class="c-val" id="cPurState">Idle</p>
+          <div class="progress mt"><div class="progress-bar progress-green" id="cPurBar" style="width:0%"></div></div>
+          <p class="muted small" id="cPurHint">Press “Start Purification” on the Purification page to clean the water.</p>
+        </div>
+        <div class="card">
+          <h3>What the colours mean</h3>
+          <div class="legend-list">
+            <div><span class="status-badge status-safe">SAFE</span> Water looks good — still boil or filter if unsure.</div>
+            <div><span class="status-badge status-warning">WARNING</span> One or more readings are not normal — purify before drinking.</div>
+            <div><span class="status-badge status-unsafe">UNSAFE</span> Stop drinking this water until it is treated and tested.</div>
+          </div>
+          <div class="notice notice-info mt">
+            <b>Note:</b> This screen shows sensor readings only. It cannot see germs (microbes). For drinking safety,
+            boiling, approved treatment and periodic laboratory testing are advised.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         PAGE: ABOUT WATER QUALITY (EDUCATION)
+    ============================================================ -->
+    <section class="page" id="page-learn">
+      <div class="grid grid-2">
+        <div class="card"><h3>⚗️ What is pH?</h3>
+          <p>pH shows how acidic or alkaline water is on a 0–14 scale (7 is neutral). Drinking water is generally considered
+          acceptable around <b>6.5–8.5</b>. Very low pH (acidic) water can corrode pipes and release metals; very high pH can taste bitter.
+          Mining runoff often lowers pH.</p></div>
+        <div class="card"><h3>🌫️ What is Turbidity?</h3>
+          <p>Turbidity measures how cloudy water is, caused by suspended particles like silt, sand and mud (measured in NTU).
+          Cloudy water can hide and protect germs, so higher turbidity usually means the water needs filtration before drinking.</p></div>
+        <div class="card"><h3>🧂 What is TDS?</h3>
+          <p>Total Dissolved Solids (ppm) is the total amount of dissolved minerals, salts and other substances. A moderate level is normal,
+          but very high TDS can taste salty/bitter and may indicate excessive minerals or contamination — for example dissolved solids
+          washed in from mining areas.</p></div>
+        <div class="card"><h3>🌡️ Why does temperature matter?</h3>
+          <p>Water temperature affects how dissolved substances behave and how fast germs multiply. A sudden temperature change can signal
+          that something new entered the source (e.g., warm industrial discharge) — it is a useful early-warning indicator.</p></div>
+        <div class="card"><h3>🧫 Why is microbial testing important?</h3>
+          <p>The four parameters on this dashboard <b>cannot detect bacteria, viruses or parasites</b>. Water can look clear and still be
+          microbiologically unsafe. Regular laboratory testing (e.g., faecal coliform/E. coli tests) is essential before water is
+          declared safe to drink.</p></div>
+        <div class="card"><h3>⛏ Why mining-affected water needs site-specific testing?</h3>
+          <p>Mining areas can release metals (iron, manganese, arsenic and others), acids and fine particles into water. These contaminants
+          vary from site to site and <b>cannot be identified by pH/turbidity/TDS alone</b> — specialized laboratory analysis is required,
+          and treatment must be chosen to target the actual contaminants found.</p></div>
+        <div class="card"><h3>🛠️ Why choose purification technology based on analysis?</h3>
+          <p>Each treatment stage targets different problems: sediment filters remove particles, activated carbon reduces odour and some
+          organic chemicals, disinfection targets microbes, and specialized media or membranes address specific dissolved contaminants.
+          Choosing technology without knowing the actual contamination wastes money and may leave the real hazard untreated.</p></div>
+        <div class="card"><h3>📊 About the Water Quality Score</h3>
+          <p>The score on this dashboard is a <b>prototype demonstration metric</b> computed from the four simulated parameters.
+          It is intuitive for community communication but is <b>not</b> an officially certified drinking-water standard and should not
+          replace laboratory results.</p></div>
+      </div>
+    </section>
+
+    <!-- ===== Global disclaimer (visible on every page) ===== -->
+    <footer class="disclaimer">
+      <b>Scientific disclaimer:</b> This prototype demonstrates the concept of smart monitoring and purification management.
+      Real-world drinking-water safety requires validated sensors, appropriate treatment technology, calibration, and laboratory
+      testing, including microbiological and contaminant-specific analysis.
+    </footer>
+  </main>
+</div>
+
+<!-- ==================== MODAL ==================== -->
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" id="modalBox">
+    <h3 id="modalTitle">Title</h3>
+    <p id="modalBody">Body</p>
+    <div class="modal-actions" id="modalActions">
+      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+      <button class="btn btn-danger" id="modalOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOASTS ==================== -->
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script src="js/vendor/chart.umd.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
